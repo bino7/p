@@ -1,0 +1,121 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-storage/app-network-status-behavior.html">
+<link rel="import" href="../bower_components/websocket-component/websocket-component.html">
+
+<dom-module id="p-server">
+    <template>
+        <style>
+        </style>
+        <websocket-component id='server'
+                             url='ws://localhost:3000/peer'
+                             on-websocket-open='onOpen'
+                             on-websocket-error='onError'
+                             on-websocket-message='onMessage'
+                             on-websocket-close='onClose'>
+
+        </websocket-component>
+
+    </template>
+    <script>
+        Server = Polymer({
+            is: 'p-server',
+
+            behaviors: [
+                Polymer.AppNetworkStatusBehavior
+            ],
+
+            listeners: {
+                'checkUserInfoFinish': 'onCheckUserInfoFinish'
+            },
+
+            properties: {
+                session: Object,
+                timeout: Number
+            },
+
+            connect: function () {
+                this.$.server.connect();
+            },
+            onOpen: function (event) {
+                this.fire('info', 'server opened');
+                this.checkUserInfo();
+            },
+            onError: function (event) {
+                this.fire('error', event);
+            },
+            onMessage: function (event) {
+                var eve = JSON.parse(event.detail.data);
+                var group = eve.Group;
+                if (group) {
+                    this.fireEvent(group, eve);
+                } else {
+                    this.fireEvent(eve.Type, eve);
+                }
+            },
+            onClose: function (event) {
+
+            },
+            send: function (event, promising) {
+                if (!event) {
+                    return
+                }
+                var self = this;
+                var promise;
+                if (promising) {
+                    var id = this.session.idGenrator.get();
+                    event.Group = id;
+                    var promise = new Promise(function (resolve, reject) {
+                        self.addEventListener(id, function (resp) {
+                            resolve(resp);
+                        });
+                    });
+                    var timeoutPromise = new Promise(function (resolve, reject) {
+                        self.async(reject({Type: 'timeout', Detail: {}}), self.timeout);
+                    });
+                    promise = Promise.race(promise, timeoutPromise);
+                }
+
+                var data = JSON.stringify(event);
+                this.$.server.send(data);
+
+                return promise;
+            },
+            checkUserInfo: function () {
+                var self = this;
+                this.send({
+                    Type: 'checkUserInfo',
+                    Detail: {
+                        'username': self.userInfo.username,
+                        'version': self.userInfo.version,
+                        'usersVersion': self.userInfo.usersVersion
+                    }
+                }).then(function (resp) {
+                    var userInfo = resp.Detail;
+                    var version = userInfo.version;
+                    if (version && version > self.session.userInfo.version) {
+                        self.session.userInfo = userInfo;
+                        self.fire('userInfoUpdated');
+                    } else {
+                        var usersVersion = userInfo.usersVersion
+                        if (userInfo.usersVersion && usersVersion > self.session.userInfo.usersVersion) {
+                            self.session.userInfo.users = userInfo.users;
+                            self.fire('usersUpdated');
+                        }
+                    }
+
+                    userInfo.users.forEach(function (username) {
+                        var user = new User(self.session,self, username);
+                        self.session.users.push(user);
+                    });
+
+                    this.fire('info', 'userInfo updated');
+
+                }).catch(function () {
+                    console.log('timeout');
+                });
+            },
+
+        });
+    </script>
+
+</dom-module>

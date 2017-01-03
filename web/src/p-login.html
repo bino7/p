@@ -1,0 +1,173 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="shared-styles.html">
+
+
+<dom-module id="p-login">
+    <template>
+        <style include="shared-styles">
+
+            .inputs {
+                @apply(--layout-vertical);
+                @apply(--layout-vertical);
+            }
+
+            .inputs paper-input {
+                width: 246px;
+            }
+
+            .buttons {
+                @apply(--layout-vertical);
+                @apply(--layout-vertical);
+                margin-top: 24px;
+            }
+
+            .buttons :hover{
+                background-color: #00acc1;
+            }
+
+            .error{
+                color:red;
+            }
+
+        </style>
+        <iron-ajax
+                id="loginAjax"
+                url="http://localhost:3000/auth"
+                method="post"
+                contentType="application/json"
+                headers='{"Content-Type":"application/json","content-type":"application/json"}'
+                body='{"Username":"[[loginData.username]]", "Password":"[[loginData.password]]","UUID":"[[UUID]]"}'
+                handle-as="json"
+                on-response="onSuccess"
+                on-error="onError"
+                with-credentials></iron-ajax>
+
+        <iron-ajax
+                id="registerAjax"
+                url="http://localhost:3000/register"
+                method="post"
+                contentType="application/json"
+                headers='{"content-type":"application/json"}'
+                body='{"Email":"[[registerData.email]]","Username":"[[registerData.username]]",
+                   "Password":"[[registerData.password]]","UUID":"[[UUID]]"}'
+                handle-as="json"
+                on-response="onSuccess"
+                on-error="onError"
+                withCredentials="true"></iron-ajax>
+
+        <div class="page-container">
+            <template is="dom-if" if="[[isLogin]]">
+                <div name="login">
+                    <template is="dom-if" if="{{error}}">
+                        <div class="error">
+                            [[error]]
+                        </div>
+                    </template>
+                    <div class="inputs">
+                        <paper-input label="Username" value="{{loginData.username}}"></paper-input>
+                        <paper-input label="Password" type="password"
+                                     value="{{loginData.password}}"></paper-input>
+                    </div>
+                    <div class="buttons">
+                        <paper-button on-tap="login">Login</paper-button>
+                        <paper-button on-tap="switch_page">create account</paper-button>
+                    </div>
+                </div>
+            </template>
+            <template is="dom-if" if="[[!isLogin]]">
+                <div name="register">
+                    <template is="dom-if" if="{{error}}">
+                        <div class="error">
+                            [[error]]
+                        </div>
+                    </template>
+                    <div class="inputs">
+                        <paper-input label="Email" value="{{registerData.email}}"></paper-input>
+                        <paper-input label="Username" value="{{registerData.username}}"></paper-input>
+                        <paper-input label="Password" type="password"
+                                     value="{{registerData.password}}"></paper-input>
+                        <paper-input label="Retype Password" type="password"
+                                     value="{{registerData.retypePassword}}"></paper-input>
+                    </div>
+                    <div class="buttons">
+                        <paper-button on-tap="register">Register</paper-button>
+                        <paper-button on-tap="switch_page">have an account</paper-button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: 'p-login',
+
+            properties: {
+                page:String,
+                UUID:String,
+                isLogin: {
+                    type: Boolean,
+                    value: true
+                },
+                error: {
+                    type: String,
+                    value: ""
+                },
+                loginData:{
+                    type:Object,
+                    value:{}
+                },
+                registerData:{
+                    type:Object,
+                    value:{}
+                }
+            },
+
+            switch_page: function () {
+                this.error=null;
+                this.isLogin = !this.isLogin;
+            },
+
+            login: function () {
+                this.$.loginAjax.generateRequest();
+            },
+
+
+            register: function () {
+                if (this.registerData.password!=this.registerData.retypePassword){
+                    this.error='password not same';
+                    return;
+                }
+                this.$.registerAjax.generateRequest();
+            },
+
+            onSuccess: function () {
+                this.fire('signed-in',null);
+                this.page='dashboard';
+            },
+
+            onError:function(r){
+                var status=r.detail.request.__data__.status;
+                switch (status){
+                    case 400:
+                        this.error='error parameters';
+                        break;
+                    case 403:
+                        this.error='username or password wrong';
+                        break;
+                    case 406:
+                        this.error='user existed';
+                        break;
+                    case 500:
+                        this.error='server wrong';
+                        break;
+                }
+            }
+        });
+    </script>
+
+</dom-module>

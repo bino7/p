@@ -1,0 +1,41 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="event-request">
+    <script>
+        EventRequest = Polymer({
+            is: 'event-request',
+
+            properties: {
+                id: String,
+                socket: Object,
+                handlers:Object,
+                timeout: Number
+            },
+            factoryImpl: function (id, socket,handlers,timeout) {
+                this.id = id;
+                this.socket = socket;
+                this.timeout=timeout;
+                this.listen(socket,id,'onEvent');
+            },
+            onEvent:function(event){
+                var self=this;
+                var handler=this.handlers[event.Type];
+                if (handler){
+                    if (timeout){
+                        Promise.race(handler,new Promise(function(resolve, reject) {
+                            setTimeout(self.onTimeout, timeout);
+                        }));
+                    }else{
+                        handler(event);
+                    }
+
+                }
+            },
+            onTimeout:function(){
+                this.fire('timeout',this);
+            }
+
+        });
+    </script>
+
+</dom-module>

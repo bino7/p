@@ -1,0 +1,204 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="webrtc-peer">
+    <template>
+        <style>
+        </style>
+    </template>
+    <script>
+        Peer = Polymer({
+            is: 'webrtc-peer',
+            properties: {
+                session: Object,
+                username: String,
+                UUID: String,
+                remote: String,
+                pc: {
+                    type: RTCPeerConnection,
+                    value: null
+                },
+                dc: {
+                    type: Object,
+                    readonly: true
+                },
+                socket: Server,
+                config: Object,
+                connected: {
+                    type: Boolean,
+                    value: false
+                },
+                connecting: {
+                    type: Boolean,
+                    value: false
+                },
+                group: String
+            },
+            observers: [],
+            ready: function () {
+            },
+            factoryImpl: function (session, username, remote) {
+                this.session = session;
+                this.UUID = session.UUID;
+                this.remote = remote;
+                this.socket = session.socket;
+                this.config = session.config;
+                this.group = session.idGenrator.get('peer-' + this.remote + '-');
+                this.listen(this.socket, this.group, '_onSocketMsg');
+                this._initRTCPeerConnection();
+            },
+
+            _initRTCPeerConnection: function () {
+                var self = this;
+                var pc = new RTCPeerConnection(self.config);
+                pc.onicecandidate = function (e) {
+                    if (e.candidate) {
+                        var candidate = e.candidate;
+                        var event = {
+                            Type: 'icecandidate',
+                            Detail: {
+                                'timestamp': Date.now(),
+                                'src': self.UUID,
+                                'dst': self.remote,
+                                'payload': candidate
+                            },
+                            Group: self.group
+                        };
+                        self.socket.send(event, false);
+                    }
+                };
+
+                pc.ondatachannel = function (e) {
+                    self.connected = false;
+                    self.connecting = true;
+                    if (self.dc != null) {
+                        return;
+                    }
+                    var dc = e.channel;
+                    self.dc = dc;
+                    self._initdatachannel(dc);
+                };
+
+                this.pc = pc;
+            },
+            connect: function () {
+                if (this.connected) {
+                    return;
+                }
+                this.connected = false;
+                this.connecting = true;
+                var self = this;
+                var pc = this.pc;
+                this.dc = pc.createDataChannel(this.remote);
+                pc.createOffer().then(
+                        function (desc) {
+                            pc.setLocalDescription(desc);
+                            self.socket.send({
+                                Type: 'offer',
+                                Detail: {
+                                    'timestamp': Date.now(),
+                                    'src': self.UUID,
+                                    'dst': self.remote,
+                                    'payload': desc
+                                },
+                                Group: self.group
+                            }).then(function (event) {
+
+                            });
+                        }
+                );
+            },
+            _onSocketMsg: function (e) {
+                var event = e.detail;
+                console.log('_onSocketMsg', event);
+                switch (event.Type) {
+                    case 'offer':
+                        var desc = event.Detail.Payload;
+                        this.pc.setRemoteDescription(desc);
+                        this.createAnswer();
+                        break;
+                    case 'answer':
+                        var desc = event.Detail.Payload;
+                        this.pc.setRemoteDescription(desc);
+                        break;
+                    case 'icecandidate':
+                        var candidate = event.Detail.Payload;
+                        this.pc.addIceCandidate(candidate)
+                                .then(function () {
+                                    console.log('AddIceCandidate success.');
+                                }, function (error) {
+                                    console.log('Failed to add Ice Candidate: ' + error.toString());
+                                });
+                        break;
+                    default:
+                        console.log('unknow msg ', m);
+                }
+            },
+            _initdatachannel: function (dc) {
+                dc.onopen = this.onDataChannelStateChange;
+                dc.onclose = this.onDataChannelStateChange;
+                dc.onmessage = this.onMessage;
+                console.fire('connected', this);
+            },
+            onDataChannelStateChange: function (e) {
+                console.log(e);
+            },
+            createAnswer: function () {
+                var self = this;
+                this.pc.createAnswer().then(
+                        function (desc) {
+                            self.pc.setLocalDescription(desc);
+                            self.socket.send({
+                                Type: 'answer',
+                                Detail: {
+                                    'timestamp': Date.now(),
+                                    'src': self.UUID,
+                                    'dst': self.remote,
+                                    'payload': desc
+                                },
+                                Group: self.group
+                            }, false);
+                        },
+                        self.onCreateSessionDescriptionError
+                );
+            },
+            onCreateSessionDescriptionError: function (error) {
+                console.log('Failed to create session description: ' + error.toString());
+            },
+            send: function (event, promising) {
+                if (!event) {
+                    return
+                }
+                var self = this;
+                var promise;
+                if (promising) {
+                    var id = this.session.idGenrator.get();
+                    event.Group = id;
+                    var promise = new Promise(function (resolve, reject) {
+                        self.addEventListener(id, function (resp) {
+                            resolve(resp);
+                        });
+                    });
+                    var timeoutPromise = new Promise(function (resolve, reject) {
+                        self.async(reject({Type: 'timeout', Detail: {}}), self.timeout);
+                    });
+                    promise = Promise.race(promise, timeoutPromise);
+                }
+
+                var data = JSON.stringify(event);
+                this.dc.send(data);
+
+                return promise;
+            },
+            onMessage: function (data) {
+                var eve = JSON.parse(data);
+                var group = eve.Group;
+                if (group) {
+                    this.fireEvent(group, eve);
+                } else {
+                    this.fireEvent(eve.Type, eve);
+                }
+            },
+        });
+    </script>
+
+</dom-module>

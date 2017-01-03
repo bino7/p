@@ -1,0 +1,33 @@
+<script>
+    SocketBehavior = {
+
+        properties: {
+
+        },
+        send: function (event, promising) {
+            if (!event) {
+                return
+            }
+            var self = this;
+            var promise;
+            if (promising) {
+                var id = this.session.idGenrator.get();
+                event.Group = id;
+                var promise = new Promise(function (resolve, reject) {
+                    self.addEventListener(id, function (resp) {
+                        resolve(resp);
+                    });
+                });
+                var timeoutPromise = new Promise(function (resolve, reject) {
+                    self.async(reject({Type: 'timeout', Detail: {}}), self.timeout);
+                });
+                promise = Promise.race(promise, timeoutPromise);
+            }
+
+            var data = JSON.stringify(event);
+            this.$.server.send(data);
+
+            return promise;
+        }
+    };
+</script>

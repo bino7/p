@@ -1,0 +1,223 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
+<link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../bower_components/noto-emoji-iconset/emoji-icon.html">
+<link rel="import" href="../bower_components/emoji-text/emoji-text.html">
+
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="id-generator.html">
+<link rel="import" href="p-server.html">
+<script src="//twemoji.maxcdn.com/2/twemoji.min.js?2.2.2"></script>
+
+<dom-module id="p-dashboard">
+    <template>
+        <style include="shared-styles">
+            :host {
+                --paper-toolbar-background: #5088F0;
+                --paper-toolbar-height: 10px;
+            }
+
+            .posts {
+
+            }
+
+            .content-container {
+                position: absolute;
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                @apply(--layout-vertical);
+
+            }
+
+            .content-container header {
+                color: var(--app-primary-color);
+                /*background-color: #E8F5FD;*/
+            }
+
+            .toolbar {
+                background-color: #fff;
+            }
+
+            .input-container {
+                @apply(--layout-horizontal);
+                overflow-y:auto;
+            }
+
+            .input {
+                @apply(--layout-flex);
+                --paper-input-container: {
+                };
+                --paper-input-container-focus-color: rgba(66, 133, 244, 0);
+                --paper-input-container-underline: {
+                    display: none
+                };
+                --paper-input-container-label-floating: {
+                    display: none;
+                };
+                font-size: 1.2em;
+                border: none;
+                display: block;
+
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                font-size: 14px;
+                padding: 8px 10px;
+
+                word-wrap:break-word;
+                word-break:break-all;
+
+                outline:0px solid transparent;
+            }
+
+            .button-container {
+                @apply(--layout-horizontal);
+                @apply(--layout-end);
+                @apply(--layout-end);
+            }
+
+            .button-container paper-icon-button {
+                @apply(--layout-center-center);
+                color: #66757f;
+                margin-right: 8px;
+            }
+
+            .button-container paper-icon-button:focus {
+                color: var(--app-primary-color);
+            }
+
+            .button-container paper-icon-button:hover {
+                color: var(--app-primary-color);
+            }
+
+            .contents {
+                background-color: #E8F5FD;
+            }
+
+            .spacer {
+                @apply(--layout-flex);
+            }
+
+            .content {
+                background-color: #fff;
+                @apply(--layout-flex);
+                min-height: 128px;
+                margin: 8px 8px 8px 8px;
+            }
+
+            .overlay {
+                @apply(--layout-fit);
+                background-color: transparent;
+            }
+
+            .fit{
+                @apply(--layout-fit);
+            }
+
+        </style>
+        <app-localstorage-document key="UUID" data="{{UUID}}" zeroValue="_initUUID">
+        </app-localstorage-document>
+        <app-localstorage-document key="userInfo" data="{{userInfo}}">
+        </app-localstorage-document>
+
+        <p-server id="server" session="self()"></p-server>
+
+        <div class="page-container">
+            <div class="container posts"></div>
+            <template is="dom-if" if="[[expanded]]">
+                <div class="overlay" on-tap="close"></div>
+            </template>
+            <div id="ddd" class="container content-container">
+                <template is="dom-if" if="[[expanded]]">
+
+                    <paper-toolbar class="header">
+                        <paper-icon-button icon="social:people" on-tap="menuAction"></paper-icon-button>
+                        <div class="title">Title</div>
+                        <paper-icon-button icon="close" on-tap="close"></paper-icon-button>
+                    </paper-toolbar>
+                    <div id="bbb" class="content" contenteditable>
+                        I \u2764\uFE0F emoji!
+
+                    </div>
+                    <paper-toolbar class="toolbar">
+                        <div class="button-container">
+                            <paper-icon-button icon="face" on-tap="face" class="dropdown-trigger"></paper-icon-button>
+                            <paper-icon-button icon="image:photo-camera" on-tap="photo"></paper-icon-button>
+                            <paper-icon-button icon="editor:attach-file" on-tap="moreAction"></paper-icon-button>
+                        </div>
+                    </paper-toolbar>
+                </template>
+                <div class="container input-container">
+                    <!--<iron-autogrow-textarea class="input" no-label-float value="{{input}}" on-tap="expand">-->
+                    <div id="input" class="input" contenteditable>
+                        <img src="http://localhost:8080/images/manifest/icon-48x48.png">ffffffffffffffffffffffffff<div>asdfadfadfaf<img src="http://localhost:8080/images/manifest/icon-48x48.png">ffffffffffffffffffffffffff</div>
+                    </div>
+                    <!--</iron-autogrow-textarea>-->
+                    <div class="button-container">
+                        <paper-icon-button icon="send" on-tap="send"></paper-icon-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script>
+        Session = Polymer({
+            is: 'p-dashboard',
+
+            properties: {
+                UUID: String,
+                userInfo: Object,
+                users: Array,
+                idGenrator: IdGenrator,
+                config: Object,
+                socket: Server,
+                expanded: {
+                    type: Boolean,
+                    value: false
+                }
+            },
+
+            ready: function () {
+                this.idGenrator = new IdGenrator();
+                this.socket = this.$.server;
+
+                var ddd=Polymer.dom(this.$.ddd);
+                var bbb=Polymer.dom(this.$.bbb);
+                bbb.node.textContent = 'I \u2764\uFE0F emoji!';
+                bbb.node.innerHTML=twemoji.parse('I \u2764\uFE0F emoji!');
+                twemoji.parse(bbb.node);
+
+            },
+
+            connect: function () {
+                this.$.server.connect();
+            },
+
+            self: function () {
+                return this;
+            },
+            expand: function () {
+                this.expanded = true;
+            },
+            close: function () {
+                this.expanded = false;
+            },
+            send:function(){
+                var input=Polymer.dom(this.$.input);
+                console.log(input.node.innerHTML);
+            }
+        });
+    </script>
+
+</dom-module>

@@ -1,0 +1,73 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="p-user">
+    <template>
+        <style>
+        </style>
+        <app-localstorage-document key="{{userInfoKey(username)}}" data="{{userInfo}}"></app-localstorage-document>
+    </template>
+    <script>
+        User = Polymer({
+            is: 'p-user',
+
+            properties: {
+                session:Object,
+                username: String,
+                userInfo:Object,
+                status: String, /*connectFailed,offline,available,busy,leave*/
+                peer: Peer,
+                peers:Array,
+                server: Server
+            },
+            factoryImpl: function (session,server,username) {
+                this.session = session;
+                this.server = server;
+                this.username = username;
+
+                this.checkUserInfo();
+            },
+            checkUserInfo: function () {
+                var self = this;
+                var version = 0;
+                if (this.userInfo) {
+                    version = this.userInfo.version;
+                }
+                this.server.send({'Type': 'userInfo', 'Detail': {'username': username, 'version': version}}, true)
+                        .then(function (event) {
+                            switch (event.Type) {
+                                case 'userInfo':
+                                    self.userInfo = event.Detail;
+                                    break;
+                                case 'unmodified':
+                                    break;
+                            }
+                            self.server.send({'Type': 'userPeers', 'Detail': {'username': username}},true)
+                                    .then(function (event) {
+                                        switch (event.Type) {
+                                            case 'userPeers':
+                                                this.peers=event.peers;
+                                                break;
+                                            case 'offline':
+                                                this.status = 'offline';
+                                                break;
+                                        }
+                                    });
+                        })
+                        .catch(function () {
+                            if (event.Type == 'timeout') {
+                                console.log('load userInfo timeout', this.username);
+                            }
+                        });
+            },
+            connect: function () {
+                var pid = event.peers[0];
+                this.peer = new Peer(session,this.username,pid);
+                this.peer.connect();
+            },
+            userInfoKey: function (username) {
+                return "user-" + username;
+            }
+        });
+    </script>
+
+</dom-module>

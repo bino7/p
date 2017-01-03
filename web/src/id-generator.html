@@ -1,0 +1,27 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="id-generator">
+    <template>
+        <style>
+        </style>
+    </template>
+    <script>
+       IdGenrator=Polymer({
+            is: 'id-generator',
+
+            properties: {
+            },
+
+            factoryImpl:function(){
+            },
+
+            get:function(prefix){
+                if (prefix) {
+                    return this.prefix+new Date().getTime();
+                }
+                return new Date().getTime();
+            }
+        });
+    </script>
+
+</dom-module>
