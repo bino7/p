@@ -12,12 +12,12 @@
 <link rel="import" href="../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
 <link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../bower_components/noto-emoji-iconset/emoji-icon.html">
-<link rel="import" href="../bower_components/emoji-text/emoji-text.html">
+
 
 <link rel="import" href="shared-styles.html">
 <link rel="import" href="id-generator.html">
 <link rel="import" href="p-server.html">
-<script src="//twemoji.maxcdn.com/2/twemoji.min.js?2.2.2"></script>
+<link rel="import" href="emoji-picker.html">
 
 <dom-module id="p-dashboard">
     <template>
@@ -125,6 +125,18 @@
                 @apply(--layout-fit);
             }
 
+            #dashboard{
+
+            }
+            .pickers{
+                @apply(--layout-flex);
+            }
+
+            .emoji{
+                width:24px;
+                height:24px;
+            }
+
         </style>
         <app-localstorage-document key="UUID" data="{{UUID}}" zeroValue="_initUUID">
         </app-localstorage-document>
@@ -138,17 +150,16 @@
             <template is="dom-if" if="[[expanded]]">
                 <div class="overlay" on-tap="close"></div>
             </template>
-            <div id="ddd" class="container content-container">
+            <div id="dashboard" class="container content-container">
                 <template is="dom-if" if="[[expanded]]">
 
-                    <paper-toolbar class="header">
+                    <!--<paper-toolbar class="header">
                         <paper-icon-button icon="social:people" on-tap="menuAction"></paper-icon-button>
                         <div class="title">Title</div>
                         <paper-icon-button icon="close" on-tap="close"></paper-icon-button>
-                    </paper-toolbar>
-                    <div id="bbb" class="content" contenteditable>
-                        I \u2764\uFE0F emoji!
-
+                    </paper-toolbar>-->
+                    <div id="bbb" class="pickers">
+                        <emoji-picker on-select-emoji="addEmoji"></emoji-picker>
                     </div>
                     <paper-toolbar class="toolbar">
                         <div class="button-container">
@@ -160,8 +171,7 @@
                 </template>
                 <div class="container input-container">
                     <!--<iron-autogrow-textarea class="input" no-label-float value="{{input}}" on-tap="expand">-->
-                    <div id="input" class="input" contenteditable>
-                        <img src="http://localhost:8080/images/manifest/icon-48x48.png">ffffffffffffffffffffffffff<div>asdfadfadfaf<img src="http://localhost:8080/images/manifest/icon-48x48.png">ffffffffffffffffffffffffff</div>
+                    <div id="input" class="input" contenteditable on-tap="expand">
                     </div>
                     <!--</iron-autogrow-textarea>-->
                     <div class="button-container">
@@ -191,13 +201,6 @@
             ready: function () {
                 this.idGenrator = new IdGenrator();
                 this.socket = this.$.server;
-
-                var ddd=Polymer.dom(this.$.ddd);
-                var bbb=Polymer.dom(this.$.bbb);
-                bbb.node.textContent = 'I \u2764\uFE0F emoji!';
-                bbb.node.innerHTML=twemoji.parse('I \u2764\uFE0F emoji!');
-                twemoji.parse(bbb.node);
-
             },
 
             connect: function () {
@@ -216,6 +219,13 @@
             send:function(){
                 var input=Polymer.dom(this.$.input);
                 console.log(input.node.innerHTML);
+            },
+            addEmoji:function(e){
+                var emoji=e.detail;
+                if(emoji && emoji.base64){
+                    var input=Polymer.dom(this.$.input);
+                    input.node.innerHTML+='<img class="emoji" src='+emoji.base64+'>';
+                }
             }
         });
     </script>

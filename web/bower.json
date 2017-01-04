@@ -29,7 +29,10 @@
     "emoji-translate": "notwaldorf/emoji-translate#^1.0.2",
     "noto-emoji-iconset": "raulsntos/noto-emoji-iconset#^0.0.7",
     "emoji-text": "^1.0.1",
-    "twemoji": "^2.2.3"
+    "twemoji": "^2.2.3",
+    "paper-swatch-picker": "PolymerElements/paper-swatch-picker#^1.0.2",
+    "paper-tabs": "PolymerElements/paper-tabs#^1.7.0",
+    "iron-image": "PolymerElements/iron-image#^1.2.5"
   },
   "devDependencies": {
     "web-component-tester": "^4.0.0"
