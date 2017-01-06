@@ -45,6 +45,7 @@
                 this.group = session.idGenrator.get('peer-' + this.remote + '-');
                 this.listen(this.socket, this.group, '_onSocketMsg');
                 this._initRTCPeerConnection();
+                var peer =new window.SimplePeer();
             },
 
             _initRTCPeerConnection: function () {

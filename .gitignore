@@ -2,11 +2,7 @@
 .gitignore
 .idea/
 p.iml
-web/.gitattributes
-web/.github/
-web/.gitignore
 web/.idea/
 web/.travis.yml
-web/src/emoji-lib.js
-web/src/emoji-picker.html
 web/src/test2.js
+web/bower_components/

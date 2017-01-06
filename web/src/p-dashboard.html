@@ -169,9 +169,10 @@
                         </div>
                     </paper-toolbar>
                 </template>
-                <div class="container input-container">
+                <div class="container input-container" bb="100px">
                     <!--<iron-autogrow-textarea class="input" no-label-float value="{{input}}" on-tap="expand">-->
-                    <div id="input" class="input" contenteditable on-tap="expand">
+                    <div id="input" class="input" contenteditable on-tap="expand" on-paste="onPaste">
+
                     </div>
                     <!--</iron-autogrow-textarea>-->
                     <div class="button-container">
@@ -226,6 +227,17 @@
                     var input=Polymer.dom(this.$.input);
                     input.node.innerHTML+='<img class="emoji" src='+emoji.base64+'>';
                 }
+            },
+            onPaste:function(e){
+                var text=e.clipboardData.getData('text');
+                if (text){
+                    e.clipboardData.clearData();
+                    e.clipboardData.setData('text',text);
+                }else{
+                    e.preventDefault();
+                }
+                e.clipboardData.clearData()
+                console.log(e,text);
             }
         });
     </script>
