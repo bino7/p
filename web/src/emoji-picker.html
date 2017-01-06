@@ -1,0 +1,145 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<script src="emoji-lib.js"></script>
+<link rel="import" href="emoji-page.html">
+
+<dom-module id="emoji-picker">
+    <template>
+        <style>
+            :host{
+                /*mini-height:128px;*/
+            }
+            .emojis{
+                height:148px;
+            }
+
+            .emojis iron-list{
+                height:148px;
+            }
+
+            .emoji{
+                width: 48px; height: 48px;
+                padding:8px;
+            }
+        </style>
+        <paper-tabs selected={{page}} attr-for-selected="name">
+            <paper-tab name="people"><iron-icon src="[[emojiImage('smile')]]"></iron-icon></paper-tab>
+            <paper-tab name="nature"><iron-icon src="[[emojiImage('dog')]]"></iron-icon></paper-tab>
+            <paper-tab name="object"><iron-icon src="[[emojiImage('bamboo')]]"></iron-icon></paper-tab>
+            <paper-tab name="place"><iron-icon src="[[emojiImage('house')]]"></iron-icon></paper-tab>
+            <paper-tab name="symbol"><iron-icon src="[[emojiImage('symbols')]]"></iron-icon></paper-tab>
+        </paper-tabs>
+        <iron-pages
+                selected="[[page]]"
+                attr-for-selected="name"
+                role="main">
+            <iron-list name="people" class="emojis" grid items="[[peopleEmojis]]" as="item"
+                       selection-enabled="true" selected-item="{{selectedEmoji}}">
+                <template>
+                    <iron-icon class="emoji" src="[[item.base64]]">
+                    </iron-icon>
+                </template>
+            </iron-list>
+            <iron-list name="nature" class="emojis" grid items="[[natureEmojis]]" as="item"
+                       selection-enabled="true" selected-item="{{selectedEmoji}}">
+                <template>
+                    <iron-icon class="emoji" src="[[item.base64]]"></iron-icon>
+                </template>
+            </iron-list>
+            <iron-list name="object" class="emojis" grid items="[[objectEmojis]]" as="item"
+                       selection-enabled="true" selected-item="{{selectedEmoji}}">
+                <template>
+                    <iron-icon class="emoji" src="[[item.base64]]"></iron-icon>
+                </template>
+            </iron-list>
+            <iron-list name="place" class="emojis" grid items="[[placeEmojis]]" as="item"
+                       selection-enabled="true" selected-item="{{selectedEmoji}}">
+                <template>
+                    <iron-icon class="emoji" src="[[item.base64]]"></iron-icon>
+                </template>
+            </iron-list>
+            <iron-list name="symbol" class="emojis" grid items="[[symbolEmojis]]" as="item"
+                       selection-enabled="true" selected-item="{{selectedEmoji}}">
+                <template>
+                    <iron-icon class="emoji" src="[[item.base64]]"></iron-icon>
+                </template>
+            </iron-list>
+        </iron-pages>
+    </template>
+    <script>
+        Polymer({
+            is: 'emoji-picker',
+
+            properties: {
+                page:{
+                    type:String,
+                    value:'people'
+                },
+                peopleEmojis:{
+                    type:Array,
+                    value:[]
+                },
+                natureEmojis:{
+                    type:Array,
+                    value:[]
+                },
+                objectEmojis:{
+                    type:Array,
+                    value:[]
+                },
+                placeEmojis:{
+                    type:Array,
+                    value:[]
+                },
+                symbolEmojis:{
+                    type:Array,
+                    value:[]
+                },
+                selectedEmoji:{
+                    type:Object,
+                    value:undefined,
+                    observer:'select'
+                }
+            },
+            ready:function(){
+                var self=this;
+                emojis.forEach(function(item){
+                   switch(item.category){
+                       case 'people':
+                           self.push('peopleEmojis',item);
+                           break;
+                       case 'nature':
+                           self.push('natureEmojis',item);
+                           break;
+                       case 'object':
+                           self.push('objectEmojis',item);
+                           break;
+                       case 'place':
+                           self.push('placeEmojis',item);
+                           break;
+                       case 'symbol':
+                           self.push('symbolEmojis',item);
+                           break;
+                   }
+                });
+            },
+            emojiImage:function(name){
+                var item=emojis.find(function(item){
+                    return item.name==name;
+                });
+                return item.base64;
+            },
+            hide:function(p){
+                console.log('hide',p);
+                return this.page!=p;
+            },
+            select:function(emoji){
+                this.fire('select-emoji',emoji);
+                this.selectedEmoji=undefined;
+            }
+        });
+    </script>
+
+</dom-module>
